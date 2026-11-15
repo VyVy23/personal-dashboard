@@ -1,0 +1,1574 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PastelFlow — Personal Management Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            cream: '#FAF8F6',
+            sand: '#F3EFEA',
+            ink: '#2D2A32',
+            muted: '#6E6A75',
+            lavender: { soft: '#EFE9FE', text: '#6D28D9', border: '#DDD6FE' },
+            mint: { soft: '#E3F6EC', text: '#15803D', border: '#BBF7D0' },
+            peach: { soft: '#FFE8E6', text: '#BE123C', border: '#FECDD3' },
+            sky: { soft: '#E0F2FE', text: '#0369A1', border: '#BAE6FD' },
+            butter: { soft: '#FEF3C7', text: '#B45309', border: '#FDE68A' }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: linear-gradient(135deg, #FDF2F8 0%, #F5F3FF 28%, #EFF6FF 58%, #ECFDF5 85%, #FEFCE8 100%);
+      background-attachment: fixed;
+      color: #2D2A32;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pastel-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 8px 28px -8px rgba(109, 40, 217, 0.08), 0 2px 8px -2px rgba(45, 42, 50, 0.04);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .pastel-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 12px 30px -8px rgba(124, 58, 237, 0.13), 0 4px 12px -2px rgba(236, 72, 153, 0.06);
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade { animation: fadeIn 0.2s ease-out; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col md:flex-row pb-20 md:pb-0">
+
+  <!-- Desktop Sidebar -->
+  <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white/80 backdrop-blur-md border-r border-white/80 shadow-sm z-30">
+    <div class="p-6 flex items-center gap-3 border-b border-[#F3E8FF]/70">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#C084FC] via-[#F472B6] to-[#38BDF8] flex items-center justify-center shadow-md">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="font-bold text-base tracking-tight text-ink">PastelFlow</h1>
+        <p class="text-xs text-muted">Quản lý cá nhân</p>
+      </div>
+    </div>
+
+    <nav id="desktop-nav" class="flex-1 p-4 space-y-1.5 overflow-y-auto"></nav>
+
+    <div class="p-4 border-t border-[#F3EFEA] space-y-2">
+      <div class="px-3 py-2.5 rounded-xl bg-cream border border-[#EFECE8]">
+        <p class="text-[11px] font-medium text-muted uppercase tracking-wider">Hôm nay</p>
+        <p id="sidebar-date" class="text-sm font-semibold text-ink mt-0.5"></p>
+      </div>
+      <button id="btn-reset-demo" type="button" class="w-full text-xs text-muted hover:text-ink py-2 px-3 rounded-xl hover:bg-sand transition flex items-center justify-center gap-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        Khôi phục dữ liệu mẫu
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="flex-1 md:pl-64 flex flex-col min-h-screen w-full">
+    <!-- Top Header -->
+    <header class="sticky top-0 z-20 bg-white/70 backdrop-blur-md border-b border-white/80 px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="md:hidden w-8 h-8 rounded-xl bg-gradient-to-br from-[#C084FC] via-[#F472B6] to-[#38BDF8] flex items-center justify-center shrink-0 shadow-sm">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <h2 id="page-title" class="text-lg sm:text-xl font-bold text-ink truncate">Tổng quan</h2>
+          <p id="page-subtitle" class="text-xs text-muted truncate hidden sm:block">Theo dõi nhịp sống, công việc và tài chính nhẹ nhàng mỗi ngày</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="btn-mobile-reset" type="button" title="Khôi phục dữ liệu mẫu" class="md:hidden p-2 rounded-xl bg-white border border-[#EFECE8] text-muted hover:text-ink">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        </button>
+        <button id="btn-quick-add" type="button" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#8B5CF6] via-[#EC4899] to-[#F59E0B] hover:opacity-95 text-white text-xs sm:text-sm font-semibold shadow-md transition flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          <span id="quick-add-label">Thêm nhanh</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Dynamic View Container -->
+    <main id="app-main" class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto animate-fade"></main>
+  </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav id="mobile-nav" class="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-[#EFECE8] z-30 px-1 py-1.5 grid grid-cols-6 gap-0.5"></nav>
+
+  <!-- Modal Container -->
+  <div id="modal-backdrop" class="fixed inset-0 bg-ink/30 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div id="modal-box" class="bg-white rounded-2xl border border-[#EFECE8] shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto p-5 sm:p-6 animate-fade">
+      <div class="flex items-center justify-between mb-4">
+        <h3 id="modal-title" class="text-base sm:text-lg font-bold text-ink"></h3>
+        <button id="modal-close" type="button" class="p-1.5 rounded-lg text-muted hover:bg-sand hover:text-ink transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-24 md:bottom-6 right-4 sm:right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = 'pastelflow_dashboard_v1';
+      const TODAY_STR = '2026-11-15';
+
+      const NAV_ITEMS = [
+        { id: 'overview', label: 'Tổng quan', short: 'Tổng', activeCls: 'bg-gradient-to-r from-[#F3E8FF] to-[#FCE7F3] text-[#7E22CE] shadow-xs', mActiveCls: 'text-[#9333EA] bg-[#F3E8FF]', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
+        { id: 'tasks', label: 'Công việc', short: 'Việc', activeCls: 'bg-gradient-to-r from-[#EDE9FE] to-[#E0E7FF] text-[#4F46E5] shadow-xs', mActiveCls: 'text-[#4F46E5] bg-[#EDE9FE]', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
+        { id: 'calendar', label: 'Lịch trình', short: 'Lịch', activeCls: 'bg-gradient-to-r from-[#E0F2FE] to-[#CFFAFE] text-[#0284C7] shadow-xs', mActiveCls: 'text-[#0284C7] bg-[#E0F2FE]', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
+        { id: 'goals', label: 'Mục tiêu & Thói quen', short: 'Mục tiêu', activeCls: 'bg-gradient-to-r from-[#DCFCE7] to-[#CCFBF1] text-[#059669] shadow-xs', mActiveCls: 'text-[#059669] bg-[#DCFCE7]', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
+        { id: 'finance', label: 'Tài chính', short: 'Tiền', activeCls: 'bg-gradient-to-r from-[#FFE4E6] to-[#FFEDD5] text-[#E11D48] shadow-xs', mActiveCls: 'text-[#E11D48] bg-[#FFE4E6]', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
+        { id: 'notes', label: 'Ghi chú', short: 'Ghi chú', activeCls: 'bg-gradient-to-r from-[#FEF3C7] to-[#FFEDD5] text-[#D97706] shadow-xs', mActiveCls: 'text-[#D97706] bg-[#FEF3C7]', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' }
+      ];
+
+      const NOTE_COLORS = [
+        { id: 'lavender', name: 'Oải hương', bg: 'bg-gradient-to-br from-[#F3E8FF] to-[#FCE7F3]', border: 'border-[#E9D5FF]', dot: 'bg-[#A855F7]' },
+        { id: 'mint', name: 'Bạc hà', bg: 'bg-gradient-to-br from-[#DCFCE7] to-[#CCFBF1]', border: 'border-[#A7F3D0]', dot: 'bg-[#10B981]' },
+        { id: 'peach', name: 'Đào nhạt', bg: 'bg-gradient-to-br from-[#FFE4E6] to-[#FFEDD5]', border: 'border-[#FECDD3]', dot: 'bg-[#F43F5E]' },
+        { id: 'sky', name: 'Xanh trời', bg: 'bg-gradient-to-br from-[#E0F2FE] to-[#E0E7FF]', border: 'border-[#BAE6FD]', dot: 'bg-[#0EA5E9]' },
+        { id: 'butter', name: 'Vàng bơ', bg: 'bg-gradient-to-br from-[#FEF3C7] to-[#FEF9C3]', border: 'border-[#FDE68A]', dot: 'bg-[#F59E0B]' }
+      ];
+
+      function getDefaultData() {
+        return {
+          activeTab: 'overview',
+          taskView: 'list',
+          taskFilter: { search: '', status: 'all', priority: 'all' },
+          calendarMonth: '2026-11',
+          selectedDate: TODAY_STR,
+          financeFilter: 'all',
+          monthlyBudget: 6500000,
+          noteFilter: { search: '', color: 'all' },
+          tasks: [
+            { id: 't1', title: 'Hoàn thiện slide báo cáo Thương mại Quốc tế', category: 'Học tập', priority: 'high', status: 'in_progress', dueDate: '2026-11-15' },
+            { id: 't2', title: 'Ôn tập bài tập định giá xuất khẩu & Incoterms', category: 'Học tập', priority: 'high', status: 'todo', dueDate: '2026-11-16' },
+            { id: 't3', title: 'Mua sắm nguyên liệu nấu ăn cho tuần mới', category: 'Cá nhân', priority: 'medium', status: 'todo', dueDate: '2026-11-15' },
+            { id: 't4', title: 'Luyện nghe TOEIC Part 3 & 4 (30 phút)', category: 'Học tập', priority: 'medium', status: 'done', dueDate: '2026-11-15' },
+            { id: 't5', title: 'Dọn dẹp bàn học và sắp xếp tài liệu', category: 'Cá nhân', priority: 'low', status: 'done', dueDate: '2026-11-14' },
+            { id: 't6', title: 'Họp nhóm chốt kế hoạch tuần tới', category: 'Công việc', priority: 'medium', status: 'todo', dueDate: '2026-11-17' }
+          ],
+          events: [
+            { id: 'e1', title: 'Họp nhóm thuyết trình', date: '2026-11-15', start: '19:30', end: '20:30', category: 'Học tập', location: 'Google Meet' },
+            { id: 'e2', title: 'Lớp Tiếng Hàn sơ cấp', date: '2026-11-16', start: '18:00', end: '19:30', category: 'Học tập', location: 'Trung tâm' },
+            { id: 'e3', title: 'Nộp báo cáo môn Tài chính', date: '2026-11-18', start: '09:00', end: '10:00', category: 'Deadline', location: 'Cổng LMS' },
+            { id: 'e4', title: 'Cà phê cuối tuần cùng bạn', date: '2026-11-21', start: '15:00', end: '17:00', category: 'Cá nhân', location: 'Quận 3' }
+          ],
+          habits: [
+            { id: 'h1', title: 'Uống đủ 2L nước', category: 'Sức khỏe', days: [true, true, true, true, false, true, true] },
+            { id: 'h2', title: 'Đọc sách 20 phút', category: 'Phát triển', days: [true, false, true, true, true, true, false] },
+            { id: 'h3', title: 'Ôn từ vựng ngoại ngữ', category: 'Học tập', days: [true, true, true, false, true, true, true] },
+            { id: 'h4', title: 'Đi bộ / Giãn cơ 30 phút', category: 'Sức khỏe', days: [false, true, false, true, true, false, false] }
+          ],
+          goals: [
+            { id: 'g1', title: 'Đạt mục tiêu TOEIC 800+', category: 'Học tập', current: 680, target: 800, unit: 'điểm', deadline: '2026-12-30' },
+            { id: 'g2', title: 'Quỹ tiết kiệm dự phòng', category: 'Tài chính', current: 7500000, target: 10000000, unit: '₫', deadline: '2026-12-31' },
+            { id: 'g3', title: 'Đọc xong 12 cuốn sách năm nay', category: 'Cá nhân', current: 9, target: 12, unit: 'cuốn', deadline: '2026-12-31' }
+          ],
+          transactions: [
+            { id: 'f1', type: 'income', amount: 4500000, category: 'Thu nhập chính', desc: 'Trợ cấp & làm thêm tháng 11', date: '2026-11-01' },
+            { id: 'f2', type: 'income', amount: 1800000, category: 'Freelance', desc: 'Thiết kế slide & dịch tài liệu', date: '2026-11-10' },
+            { id: 'f3', type: 'expense', amount: 1200000, category: 'Ăn uống', desc: 'Đi chợ & ăn uống tuần 1-2', date: '2026-11-08' },
+            { id: 'f4', type: 'expense', amount: 450000, category: 'Học tập', desc: 'Sách tham khảo & tài liệu in', date: '2026-11-09' },
+            { id: 'f5', type: 'expense', amount: 320000, category: 'Di chuyển', desc: 'Xăng xe & gửi xe', date: '2026-11-12' },
+            { id: 'f6', type: 'expense', amount: 280000, category: 'Giải trí', desc: 'Cà phê & xem phim cuối tuần', date: '2026-11-14' }
+          ],
+          notes: [
+            { id: 'n1', title: 'Ý tưởng bố cục bài thuyết trình', content: 'Mở đầu bằng số liệu xuất nhập khẩu thực tế, sau đó đi vào 3 điểm chính: Thuế quan, Quy tắc xuất xứ và Cơ hội ngành hàng.', tag: 'Học tập', color: 'lavender', pinned: true, updatedAt: '2026-11-15' },
+            { id: 'n2', title: 'Danh sách mua sắm tuần này', content: '- Sữa hạt không đường\n- Ức gà & rau xanh\n- Cà phê rang xay\n- Giấy note pastel', tag: 'Cá nhân', color: 'mint', pinned: true, updatedAt: '2026-11-14' },
+            { id: 'n3', title: 'Nhắc nhở sức khỏe', content: 'Ngủ trước 23:30, hạn chế dùng điện thoại 30 phút trước khi ngủ để sáng mai dậy sớm học bài hiệu quả hơn.', tag: 'Sức khỏe', color: 'peach', pinned: false, updatedAt: '2026-11-13' },
+            { id: 'n4', title: 'Từ vựng cần nhớ', content: 'FOB (Free On Board), CIF (Cost, Insurance and Freight), L/C (Letter of Credit).', tag: 'Học tập', color: 'butter', pinned: false, updatedAt: '2026-11-11' }
+          ]
+        };
+      }
+
+      let state = loadState();
+      let financeChartInstance = null;
+
+      function loadState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            return { ...getDefaultData(), ...parsed };
+          }
+        } catch (e) { /* ignore storage errors */ }
+        return getDefaultData();
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) { /* ignore storage errors */ }
+      }
+
+      function uid(prefix) {
+        return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      }
+
+      function formatVND(num) {
+        return new Intl.NumberFormat('vi-VN').format(Math.round(num || 0)) + ' ₫';
+      }
+
+      function escapeHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function formatDateVN(dateStr) {
+        if (!dateStr) return '';
+        const [y, m, d] = dateStr.split('-');
+        return `${d}/${m}/${y}`;
+      }
+
+      function showToast(msg, tone = 'lavender') {
+        const colors = {
+          lavender: 'bg-[#EFE9FE] text-[#5B21B6] border-[#DDD6FE]',
+          mint: 'bg-[#E3F6EC] text-[#15803D] border-[#BBF7D0]',
+          peach: 'bg-[#FFE8E6] text-[#BE123C] border-[#FECDD3]'
+        };
+        const el = document.createElement('div');
+        el.className = `pointer-events-auto px-4 py-2.5 rounded-xl border shadow-md text-xs sm:text-sm font-medium animate-fade ${colors[tone] || colors.lavender}`;
+        el.textContent = msg;
+        document.getElementById('toast-container').appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = '0';
+          el.style.transition = 'opacity 0.25s ease';
+          setTimeout(() => el.remove(), 250);
+        }, 2400);
+      }
+
+      function openModal(title, htmlContent) {
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('modal-body').innerHTML = htmlContent;
+        const backdrop = document.getElementById('modal-backdrop');
+        backdrop.classList.remove('hidden');
+        backdrop.classList.add('flex');
+      }
+
+      function closeModal() {
+        const backdrop = document.getElementById('modal-backdrop');
+        backdrop.classList.add('hidden');
+        backdrop.classList.remove('flex');
+      }
+
+      function openConfirmModal(title, message, onConfirm) {
+        openModal(title, `
+          <p class="text-sm text-muted mb-5">${escapeHtml(message)}</p>
+          <div class="flex justify-end gap-2">
+            <button type="button" id="confirm-cancel" class="px-4 py-2 rounded-xl border border-[#EFECE8] text-sm font-medium text-ink hover:bg-sand">Hủy</button>
+            <button type="button" id="confirm-ok" class="px-4 py-2 rounded-xl bg-[#BE123C] text-white text-sm font-medium hover:bg-[#9F1239]">Xác nhận</button>
+          </div>
+        `);
+        document.getElementById('confirm-cancel').addEventListener('click', closeModal);
+        document.getElementById('confirm-ok').addEventListener('click', () => {
+          closeModal();
+          onConfirm();
+        });
+      }
+
+      function renderNav() {
+        const dNav = document.getElementById('desktop-nav');
+        dNav.innerHTML = NAV_ITEMS.map(item => {
+          const active = state.activeTab === item.id;
+          return `
+            <button type="button" data-nav="${item.id}" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition ${active ? item.activeCls : 'text-muted hover:bg-white/70 hover:text-ink'}">
+              <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="${item.icon}"/></svg>
+              <span class="truncate">${item.label}</span>
+            </button>
+          `;
+        }).join('');
+
+        const mNav = document.getElementById('mobile-nav');
+        mNav.innerHTML = NAV_ITEMS.map(item => {
+          const active = state.activeTab === item.id;
+          return `
+            <button type="button" data-nav="${item.id}" class="flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition ${active ? item.mActiveCls : 'text-muted'}">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.9" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="${item.icon}"/></svg>
+              <span class="text-[10px] font-medium mt-0.5 truncate max-w-full">${item.short}</span>
+            </button>
+          `;
+        }).join('');
+
+        document.querySelectorAll('[data-nav]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.activeTab = btn.dataset.nav;
+            saveState();
+            render();
+          });
+        });
+
+        const currentNav = NAV_ITEMS.find(i => i.id === state.activeTab) || NAV_ITEMS[0];
+        document.getElementById('page-title').textContent = currentNav.label;
+        const addLabels = {
+          overview: 'Thêm việc',
+          tasks: 'Thêm công việc',
+          calendar: 'Thêm sự kiện',
+          goals: 'Thêm mục tiêu',
+          finance: 'Thêm giao dịch',
+          notes: 'Thêm ghi chú'
+        };
+        document.getElementById('quick-add-label').textContent = addLabels[state.activeTab] || 'Thêm nhanh';
+      }
+
+      function render() {
+        renderNav();
+        const main = document.getElementById('app-main');
+        if (financeChartInstance) {
+          financeChartInstance.destroy();
+          financeChartInstance = null;
+        }
+        switch (state.activeTab) {
+          case 'overview': renderOverview(main); break;
+          case 'tasks': renderTasks(main); break;
+          case 'calendar': renderCalendar(main); break;
+          case 'goals': renderGoals(main); break;
+          case 'finance': renderFinance(main); break;
+          case 'notes': renderNotes(main); break;
+          default: renderOverview(main);
+        }
+      }
+
+      // ================= OVERVIEW =================
+      function renderOverview(container) {
+        const doneTasks = state.tasks.filter(t => t.status === 'done').length;
+        const totalTasks = state.tasks.length;
+        const todayEvents = state.events.filter(e => e.date === TODAY_STR);
+        const totalIncome = state.transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+        const totalExpense = state.transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+        const balance = totalIncome - totalExpense;
+
+        const habitDoneToday = state.habits.filter(h => h.days[6]).length;
+        const habitTotal = state.habits.length;
+        const pinnedNotes = state.notes.filter(n => n.pinned).slice(0, 2);
+        const activeTasks = state.tasks.filter(t => t.status !== 'done').slice(0, 4);
+
+        container.innerHTML = `
+          <div class="space-y-6">
+            <!-- KPI Row -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <button type="button" data-jump="tasks" class="text-left rounded-2xl p-4 bg-gradient-to-br from-[#F3E8FF] via-[#FAF5FF] to-[#FCE7F3] border border-[#E9D5FF] shadow-sm hover:shadow-md transition">
+                <span class="inline-flex px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/80 text-[#7E22CE] shadow-2xs">✨ Công việc</span>
+                <p class="text-2xl font-bold text-[#4C1D95] mt-3 tabular-nums">${doneTasks}/${totalTasks}</p>
+                <p class="text-xs text-[#6B21A8]/80 mt-0.5 font-medium">Đã hoàn thành</p>
+              </button>
+              <button type="button" data-jump="calendar" class="text-left rounded-2xl p-4 bg-gradient-to-br from-[#E0F2FE] via-[#F0F9FF] to-[#CFFAFE] border border-[#BAE6FD] shadow-sm hover:shadow-md transition">
+                <span class="inline-flex px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/80 text-[#0284C7] shadow-2xs">📅 Lịch hôm nay</span>
+                <p class="text-2xl font-bold text-[#0C4A6E] mt-3 tabular-nums">${todayEvents.length}</p>
+                <p class="text-xs text-[#0369A1]/80 mt-0.5 font-medium">Sự kiện sắp tới</p>
+              </button>
+              <button type="button" data-jump="goals" class="text-left rounded-2xl p-4 bg-gradient-to-br from-[#DCFCE7] via-[#ECFDF5] to-[#CCFBF1] border border-[#A7F3D0] shadow-sm hover:shadow-md transition">
+                <span class="inline-flex px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/80 text-[#059669] shadow-2xs">⚡ Thói quen</span>
+                <p class="text-2xl font-bold text-[#064E3B] mt-3 tabular-nums">${habitDoneToday}/${habitTotal}</p>
+                <p class="text-xs text-[#047857]/80 mt-0.5 font-medium">Check-in hôm nay</p>
+              </button>
+              <button type="button" data-jump="finance" class="text-left rounded-2xl p-4 bg-gradient-to-br from-[#FFE4E6] via-[#FFF1F2] to-[#FFEDD5] border border-[#FECDD3] shadow-sm hover:shadow-md transition">
+                <span class="inline-flex px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/80 text-[#E11D48] shadow-2xs">💰 Số dư</span>
+                <p class="text-lg sm:text-xl font-bold text-[#881337] mt-3 tabular-nums truncate">${formatVND(balance)}</p>
+                <p class="text-xs text-[#BE123C]/80 mt-0.5 font-medium">Tháng 11/2026</p>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <!-- Today's Tasks -->
+              <div class="lg:col-span-2 pastel-card rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="font-bold text-ink text-base">Việc cần làm ưu tiên</h3>
+                  <button type="button" data-jump="tasks" class="text-xs font-medium text-[#6D28D9] hover:underline">Xem tất cả →</button>
+                </div>
+                <div class="space-y-2.5">
+                  ${activeTasks.length ? activeTasks.map(t => `
+                    <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-cream border border-[#EFECE8]">
+                      <label class="flex items-center gap-3 min-w-0 cursor-pointer flex-1">
+                        <input type="checkbox" data-ov-task="${t.id}" class="w-4 h-4 rounded accent-[#6D28D9] cursor-pointer shrink-0" />
+                        <div class="min-w-0">
+                          <p class="text-sm font-medium text-ink truncate">${escapeHtml(t.title)}</p>
+                          <p class="text-xs text-muted">${escapeHtml(t.category)} • Hạn ${formatDateVN(t.dueDate)}</p>
+                        </div>
+                      </label>
+                      ${priorityBadge(t.priority)}
+                    </div>
+                  `).join('') : '<p class="text-sm text-muted py-4 text-center">Tuyệt vời! Bạn đã hoàn thành hết công việc.</p>'}
+                </div>
+              </div>
+
+              <!-- Quick Habits -->
+              <div class="pastel-card rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="font-bold text-ink text-base">Thói quen hôm nay</h3>
+                  <button type="button" data-jump="goals" class="text-xs font-medium text-[#15803D] hover:underline">Chi tiết →</button>
+                </div>
+                <div class="space-y-2.5">
+                  ${state.habits.map(h => `
+                    <button type="button" data-ov-habit="${h.id}" class="w-full flex items-center justify-between p-3 rounded-xl border transition ${h.days[6] ? 'bg-[#E3F6EC]/70 border-[#BBF7D0]' : 'bg-cream border-[#EFECE8] hover:bg-sand/50'}">
+                      <span class="text-sm font-medium ${h.days[6] ? 'text-[#15803D] line-through' : 'text-ink'}">${escapeHtml(h.title)}</span>
+                      <span class="w-5 h-5 rounded-full flex items-center justify-center text-xs ${h.days[6] ? 'bg-[#15803D] text-white' : 'border border-[#D6D3D1] bg-white'}">
+                        ${h.days[6] ? '✓' : ''}
+                      </span>
+                    </button>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+
+            <!-- Upcoming Events & Pinned Notes -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div class="pastel-card rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="font-bold text-ink text-base">Lịch trình sắp tới</h3>
+                  <button type="button" data-jump="calendar" class="text-xs font-medium text-[#0369A1] hover:underline">Mở lịch →</button>
+                </div>
+                <div class="space-y-2.5">
+                  ${state.events.slice(0, 3).map(e => `
+                    <div class="flex items-center gap-3 p-3 rounded-xl bg-[#E0F2FE]/40 border border-[#BAE6FD]/60">
+                      <div class="px-2.5 py-1.5 rounded-lg bg-white text-center shrink-0 border border-[#BAE6FD]">
+                        <p class="text-[10px] font-semibold text-[#0369A1] uppercase">Th${e.date.split('-')[1]}</p>
+                        <p class="text-sm font-bold text-ink leading-tight">${e.date.split('-')[2]}</p>
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-semibold text-ink truncate">${escapeHtml(e.title)}</p>
+                        <p class="text-xs text-muted">${e.start} – ${e.end} • ${escapeHtml(e.location || e.category)}</p>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+
+              <div class="pastel-card rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="font-bold text-ink text-base">Ghi chú đã ghim</h3>
+                  <button type="button" data-jump="notes" class="text-xs font-medium text-[#B45309] hover:underline">Tất cả ghi chú →</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  ${pinnedNotes.length ? pinnedNotes.map(n => {
+                    const c = NOTE_COLORS.find(x => x.id === n.color) || NOTE_COLORS[0];
+                    return `
+                      <div class="p-3.5 rounded-xl border ${c.bg} ${c.border}">
+                        <p class="text-sm font-semibold text-ink truncate">${escapeHtml(n.title)}</p>
+                        <p class="text-xs text-muted mt-1.5 line-clamp-3 whitespace-pre-line">${escapeHtml(n.content)}</p>
+                      </div>
+                    `;
+                  }).join('') : '<p class="text-sm text-muted col-span-2 py-4 text-center">Chưa có ghi chú nào được ghim.</p>'}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        container.querySelectorAll('[data-jump]').forEach(el => {
+          el.addEventListener('click', () => {
+            state.activeTab = el.dataset.jump;
+            saveState();
+            render();
+          });
+        });
+        container.querySelectorAll('[data-ov-task]').forEach(cb => {
+          cb.addEventListener('change', () => {
+            const t = state.tasks.find(x => x.id === cb.dataset.ovTask);
+            if (t) {
+              t.status = 'done';
+              saveState();
+              showToast('Đã hoàn thành công việc!', 'mint');
+              render();
+            }
+          });
+        });
+        container.querySelectorAll('[data-ov-habit]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const h = state.habits.find(x => x.id === btn.dataset.ovHabit);
+            if (h) {
+              h.days[6] = !h.days[6];
+              saveState();
+              render();
+            }
+          });
+        });
+      }
+
+      // ================= TASKS =================
+      function priorityBadge(p) {
+        if (p === 'high') return '<span class="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-[#FFE8E6] text-[#BE123C] shrink-0">Cao</span>';
+        if (p === 'medium') return '<span class="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-[#FEF3C7] text-[#B45309] shrink-0">Trung bình</span>';
+        return '<span class="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-[#E3F6EC] text-[#15803D] shrink-0">Thấp</span>';
+      }
+
+      function renderTasks(container) {
+        const f = state.taskFilter;
+        const filtered = state.tasks.filter(t => {
+          const matchSearch = !f.search || t.title.toLowerCase().includes(f.search.toLowerCase()) || t.category.toLowerCase().includes(f.search.toLowerCase());
+          const matchStatus = f.status === 'all' || t.status === f.status;
+          const matchPriority = f.priority === 'all' || t.priority === f.priority;
+          return matchSearch && matchStatus && matchPriority;
+        });
+
+        container.innerHTML = `
+          <div class="space-y-5">
+            <!-- Toolbar -->
+            <div class="pastel-card rounded-2xl p-4 flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+              <div class="flex flex-col sm:flex-row gap-2.5 flex-1">
+                <input id="task-search" type="text" value="${escapeHtml(f.search)}" placeholder="Tìm công việc hoặc danh mục..." class="flex-1 px-3.5 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm focus:outline-none focus:border-[#8B5CF6]" />
+                <select id="task-filter-status" class="px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm">
+                  <option value="all" ${f.status === 'all' ? 'selected' : ''}>Tất cả trạng thái</option>
+                  <option value="todo" ${f.status === 'todo' ? 'selected' : ''}>Cần làm</option>
+                  <option value="in_progress" ${f.status === 'in_progress' ? 'selected' : ''}>Đang làm</option>
+                  <option value="done" ${f.status === 'done' ? 'selected' : ''}>Hoàn thành</option>
+                </select>
+                <select id="task-filter-priority" class="px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm">
+                  <option value="all" ${f.priority === 'all' ? 'selected' : ''}>Mọi mức độ</option>
+                  <option value="high" ${f.priority === 'high' ? 'selected' : ''}>Ưu tiên cao</option>
+                  <option value="medium" ${f.priority === 'medium' ? 'selected' : ''}>Trung bình</option>
+                  <option value="low" ${f.priority === 'low' ? 'selected' : ''}>Thấp</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2 justify-between sm:justify-end">
+                <div class="inline-flex rounded-xl bg-cream p-1 border border-[#EFECE8]">
+                  <button type="button" data-task-view="list" class="px-3 py-1.5 rounded-lg text-xs font-medium ${state.taskView === 'list' ? 'bg-white shadow-xs text-[#6D28D9]' : 'text-muted'}">Danh sách</button>
+                  <button type="button" data-task-view="board" class="px-3 py-1.5 rounded-lg text-xs font-medium ${state.taskView === 'board' ? 'bg-white shadow-xs text-[#6D28D9]' : 'text-muted'}">Bảng Kanban</button>
+                </div>
+                <button type="button" id="btn-add-task" class="px-3.5 py-2 rounded-xl bg-[#EFE9FE] text-[#6D28D9] hover:bg-[#DDD6FE] text-xs font-semibold transition">+ Việc mới</button>
+              </div>
+            </div>
+
+            ${state.taskView === 'list' ? `
+              <div class="pastel-card rounded-2xl p-4 sm:p-5 space-y-2.5">
+                ${filtered.length ? filtered.map(t => `
+                  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-cream border border-[#EFECE8]">
+                    <div class="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+                      <input type="checkbox" data-toggle-task="${t.id}" ${t.status === 'done' ? 'checked' : ''} class="mt-1 sm:mt-0 w-4 h-4 rounded accent-[#6D28D9] cursor-pointer shrink-0" />
+                      <div class="min-w-0 flex-1">
+                        <p class="text-sm font-semibold ${t.status === 'done' ? 'line-through text-muted' : 'text-ink'}">${escapeHtml(t.title)}</p>
+                        <div class="flex flex-wrap items-center gap-2 mt-1 text-xs text-muted">
+                          <span class="px-2 py-0.5 rounded-md bg-white border border-[#EFECE8]">${escapeHtml(t.category)}</span>
+                          <span>Hạn: ${formatDateVN(t.dueDate)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 self-end sm:self-center">
+                      ${priorityBadge(t.priority)}
+                      <select data-status-task="${t.id}" class="px-2.5 py-1 rounded-lg bg-white border border-[#EFECE8] text-xs font-medium text-ink">
+                        <option value="todo" ${t.status === 'todo' ? 'selected' : ''}>Cần làm</option>
+                        <option value="in_progress" ${t.status === 'in_progress' ? 'selected' : ''}>Đang làm</option>
+                        <option value="done" ${t.status === 'done' ? 'selected' : ''}>Hoàn thành</option>
+                      </select>
+                      <button type="button" data-edit-task="${t.id}" class="p-1.5 rounded-lg text-muted hover:text-[#6D28D9] hover:bg-white" title="Sửa">✎</button>
+                      <button type="button" data-del-task="${t.id}" class="p-1.5 rounded-lg text-muted hover:text-[#BE123C] hover:bg-white" title="Xóa">✕</button>
+                    </div>
+                  </div>
+                `).join('') : '<p class="text-sm text-muted text-center py-8">Không có công việc nào khớp bộ lọc.</p>'}
+              </div>
+            ` : `
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                ${[
+                  { key: 'todo', title: 'Cần làm', bg: 'bg-gradient-to-b from-[#E0F2FE]/70 to-[#F0F9FF]/60', badge: 'bg-[#BAE6FD] text-[#0369A1]' },
+                  { key: 'in_progress', title: 'Đang làm', bg: 'bg-gradient-to-b from-[#FEF3C7]/70 to-[#FFFBEB]/60', badge: 'bg-[#FDE68A] text-[#B45309]' },
+                  { key: 'done', title: 'Hoàn thành', bg: 'bg-gradient-to-b from-[#DCFCE7]/70 to-[#ECFDF5]/60', badge: 'bg-[#A7F3D0] text-[#047857]' }
+                ].map(col => {
+                  const colTasks = filtered.filter(t => t.status === col.key);
+                  return `
+                    <div class="rounded-2xl p-4 border border-[#EFECE8] ${col.bg} space-y-3">
+                      <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-1 rounded-lg text-xs font-semibold ${col.badge}">${col.title}</span>
+                        <span class="text-xs font-bold text-muted">${colTasks.length}</span>
+                      </div>
+                      <div class="space-y-2.5">
+                        ${colTasks.map(t => `
+                          <div class="bg-white rounded-xl p-3.5 border border-[#EFECE8] shadow-xs space-y-2">
+                            <div class="flex items-start justify-between gap-2">
+                              <p class="text-sm font-semibold text-ink">${escapeHtml(t.title)}</p>
+                              <button type="button" data-del-task="${t.id}" class="text-xs text-muted hover:text-[#BE123C]">✕</button>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-muted">
+                              <span>${escapeHtml(t.category)} • ${formatDateVN(t.dueDate)}</span>
+                              ${priorityBadge(t.priority)}
+                            </div>
+                            <div class="pt-1 flex items-center gap-1.5">
+                              ${col.key !== 'todo' ? `<button type="button" data-move-task="${t.id}:todo" class="text-[11px] px-2 py-1 rounded-lg bg-cream hover:bg-sand text-ink">Cần làm</button>` : ''}
+                              ${col.key !== 'in_progress' ? `<button type="button" data-move-task="${t.id}:in_progress" class="text-[11px] px-2 py-1 rounded-lg bg-cream hover:bg-sand text-ink">Đang làm</button>` : ''}
+                              ${col.key !== 'done' ? `<button type="button" data-move-task="${t.id}:done" class="text-[11px] px-2 py-1 rounded-lg bg-[#E3F6EC] text-[#15803D] font-medium">Xong</button>` : ''}
+                            </div>
+                          </div>
+                        `).join('') || '<p class="text-xs text-muted text-center py-4">Trống</p>'}
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            `}
+          </div>
+        `;
+
+        document.getElementById('task-search').addEventListener('input', e => {
+          state.taskFilter.search = e.target.value;
+          renderTasks(container);
+          const inp = document.getElementById('task-search');
+          inp.focus();
+          inp.setSelectionRange(inp.value.length, inp.value.length);
+        });
+        document.getElementById('task-filter-status').addEventListener('change', e => {
+          state.taskFilter.status = e.target.value;
+          saveState();
+          renderTasks(container);
+        });
+        document.getElementById('task-filter-priority').addEventListener('change', e => {
+          state.taskFilter.priority = e.target.value;
+          saveState();
+          renderTasks(container);
+        });
+        container.querySelectorAll('[data-task-view]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.taskView = btn.dataset.taskView;
+            saveState();
+            renderTasks(container);
+          });
+        });
+        document.getElementById('btn-add-task').addEventListener('click', () => openTaskModal());
+        container.querySelectorAll('[data-toggle-task]').forEach(cb => {
+          cb.addEventListener('change', () => {
+            const t = state.tasks.find(x => x.id === cb.dataset.toggleTask);
+            if (t) {
+              t.status = cb.checked ? 'done' : 'todo';
+              saveState();
+              renderTasks(container);
+            }
+          });
+        });
+        container.querySelectorAll('[data-status-task]').forEach(sel => {
+          sel.addEventListener('change', () => {
+            const t = state.tasks.find(x => x.id === sel.dataset.statusTask);
+            if (t) {
+              t.status = sel.value;
+              saveState();
+              renderTasks(container);
+            }
+          });
+        });
+        container.querySelectorAll('[data-move-task]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const [id, st] = btn.dataset.moveTask.split(':');
+            const t = state.tasks.find(x => x.id === id);
+            if (t) {
+              t.status = st;
+              saveState();
+              renderTasks(container);
+            }
+          });
+        });
+        container.querySelectorAll('[data-edit-task]').forEach(btn => {
+          btn.addEventListener('click', () => openTaskModal(btn.dataset.editTask));
+        });
+        container.querySelectorAll('[data-del-task]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.tasks = state.tasks.filter(x => x.id !== btn.dataset.delTask);
+            saveState();
+            showToast('Đã xóa công việc', 'peach');
+            renderTasks(container);
+          });
+        });
+      }
+
+      function openTaskModal(editId = null) {
+        const existing = editId ? state.tasks.find(x => x.id === editId) : null;
+        openModal(existing ? 'Chỉnh sửa công việc' : 'Thêm công việc mới', `
+          <form id="form-task" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold text-muted mb-1">Tên công việc</label>
+              <input name="title" required value="${escapeHtml(existing?.title || '')}" placeholder="Ví dụ: Hoàn thành báo cáo..." class="w-full px-3.5 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Danh mục</label>
+                <select name="category" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm">
+                  ${['Học tập', 'Công việc', 'Cá nhân', 'Sức khỏe'].map(c => `<option value="${c}" ${existing?.category === c ? 'selected' : ''}>${c}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Độ ưu tiên</label>
+                <select name="priority" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm">
+                  <option value="high" ${existing?.priority === 'high' ? 'selected' : ''}>Cao</option>
+                  <option value="medium" ${!existing || existing?.priority === 'medium' ? 'selected' : ''}>Trung bình</option>
+                  <option value="low" ${existing?.priority === 'low' ? 'selected' : ''}>Thấp</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Hạn hoàn thành</label>
+                <input type="date" name="dueDate" value="${existing?.dueDate || TODAY_STR}" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Trạng thái</label>
+                <select name="status" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm">
+                  <option value="todo" ${!existing || existing?.status === 'todo' ? 'selected' : ''}>Cần làm</option>
+                  <option value="in_progress" ${existing?.status === 'in_progress' ? 'selected' : ''}>Đang làm</option>
+                  <option value="done" ${existing?.status === 'done' ? 'selected' : ''}>Hoàn thành</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" id="cancel-task-modal" class="px-4 py-2 rounded-xl border border-[#EFECE8] text-sm font-medium text-ink">Hủy</button>
+              <button type="submit" class="px-4 py-2 rounded-xl bg-[#6D28D9] text-white text-sm font-medium hover:bg-[#5B21B6]">Lưu</button>
+            </div>
+          </form>
+        `);
+        document.getElementById('cancel-task-modal').addEventListener('click', closeModal);
+        document.getElementById('form-task').addEventListener('submit', e => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const payload = {
+            title: fd.get('title').trim(),
+            category: fd.get('category'),
+            priority: fd.get('priority'),
+            dueDate: fd.get('dueDate'),
+            status: fd.get('status')
+          };
+          if (existing) {
+            Object.assign(existing, payload);
+            showToast('Đã cập nhật công việc', 'lavender');
+          } else {
+            state.tasks.unshift({ id: uid('t'), ...payload });
+            showToast('Đã thêm công việc mới', 'mint');
+          }
+          saveState();
+          closeModal();
+          render();
+        });
+      }
+
+      // ================= CALENDAR =================
+      function renderCalendar(container) {
+        const [yearStr, monthStr] = state.calendarMonth.split('-');
+        const year = parseInt(yearStr, 10);
+        const month = parseInt(monthStr, 10);
+        const firstDay = new Date(year, month - 1, 1);
+        const startOffset = (firstDay.getDay() + 6) % 7;
+        const daysInMonth = new Date(year, month, 0).getDate();
+
+        const cells = [];
+        for (let i = 0; i < startOffset; i++) cells.push(null);
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          cells.push({ day: d, dateStr });
+        }
+
+        const dayEvents = state.events
+          .filter(e => e.date === state.selectedDate)
+          .sort((a, b) => a.start.localeCompare(b.start));
+
+        container.innerHTML = `
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div class="lg:col-span-2 pastel-card rounded-2xl p-4 sm:p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-ink text-base sm:text-lg">Tháng ${month}/${year}</h3>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" id="cal-prev" class="px-2.5 py-1.5 rounded-xl bg-cream border border-[#EFECE8] text-sm hover:bg-sand">‹</button>
+                  <button type="button" id="cal-today" class="px-3 py-1.5 rounded-xl bg-[#E0F2FE] text-[#0369A1] text-xs font-semibold">Hôm nay</button>
+                  <button type="button" id="cal-next" class="px-2.5 py-1.5 rounded-xl bg-cream border border-[#EFECE8] text-sm hover:bg-sand">›</button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-muted mb-2">
+                <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
+              </div>
+              <div class="grid grid-cols-7 gap-1.5">
+                ${cells.map(c => {
+                  if (!c) return '<div class="h-14 sm:h-20 rounded-xl bg-cream/40"></div>';
+                  const evs = state.events.filter(e => e.date === c.dateStr);
+                  const isToday = c.dateStr === TODAY_STR;
+                  const isSelected = c.dateStr === state.selectedDate;
+                  return `
+                    <button type="button" data-cal-day="${c.dateStr}" class="h-14 sm:h-20 p-1.5 rounded-xl border text-left flex flex-col justify-between transition ${isSelected ? 'bg-[#E0F2FE]/70 border-[#0369A1]' : isToday ? 'bg-[#EFE9FE]/60 border-[#8B5CF6]' : 'bg-cream/60 border-[#EFECE8] hover:bg-sand/60'}">
+                      <span class="text-xs font-semibold ${isToday ? 'text-[#6D28D9]' : 'text-ink'}">${c.day}</span>
+                      <div class="flex flex-wrap gap-1">
+                        ${evs.slice(0, 3).map(() => '<span class="w-2 h-2 rounded-full bg-[#0EA5E9]"></span>').join('')}
+                        ${evs.length > 3 ? `<span class="text-[10px] text-muted">+${evs.length - 3}</span>` : ''}
+                      </div>
+                    </button>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+
+            <!-- Selected Day Agenda -->
+            <div class="pastel-card rounded-2xl p-5 flex flex-col">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <p class="text-xs text-muted">Lịch ngày</p>
+                  <h4 class="text-base font-bold text-ink">${formatDateVN(state.selectedDate)}</h4>
+                </div>
+                <button type="button" id="btn-add-event" class="px-3 py-1.5 rounded-xl bg-[#E0F2FE] text-[#0369A1] text-xs font-semibold hover:bg-[#BAE6FD]">+ Sự kiện</button>
+              </div>
+              <div class="space-y-2.5 flex-1">
+                ${dayEvents.length ? dayEvents.map(e => `
+                  <div class="p-3.5 rounded-xl bg-cream border border-[#EFECE8] flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <p class="text-sm font-semibold text-ink">${escapeHtml(e.title)}</p>
+                      <p class="text-xs text-muted mt-0.5">${e.start} – ${e.end} • ${escapeHtml(e.location || e.category)}</p>
+                    </div>
+                    <button type="button" data-del-event="${e.id}" class="text-xs text-muted hover:text-[#BE123C] p-1">✕</button>
+                  </div>
+                `).join('') : '<p class="text-sm text-muted text-center py-8">Chưa có sự kiện nào trong ngày này.</p>'}
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('cal-prev').addEventListener('click', () => shiftMonth(-1));
+        document.getElementById('cal-next').addEventListener('click', () => shiftMonth(1));
+        document.getElementById('cal-today').addEventListener('click', () => {
+          state.calendarMonth = '2026-11';
+          state.selectedDate = TODAY_STR;
+          saveState();
+          renderCalendar(container);
+        });
+        container.querySelectorAll('[data-cal-day]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.selectedDate = btn.dataset.calDay;
+            saveState();
+            renderCalendar(container);
+          });
+        });
+        document.getElementById('btn-add-event').addEventListener('click', () => openEventModal());
+        container.querySelectorAll('[data-del-event]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.events = state.events.filter(x => x.id !== btn.dataset.delEvent);
+            saveState();
+            showToast('Đã xóa sự kiện', 'peach');
+            renderCalendar(container);
+          });
+        });
+
+        function shiftMonth(delta) {
+          const d = new Date(year, month - 1 + delta, 1);
+          state.calendarMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          saveState();
+          renderCalendar(container);
+        }
+      }
+
+      function openEventModal() {
+        openModal('Thêm sự kiện mới', `
+          <form id="form-event" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold text-muted mb-1">Tên sự kiện</label>
+              <input name="title" required placeholder="Ví dụ: Họp nhóm..." class="w-full px-3.5 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Ngày</label>
+                <input type="date" name="date" value="${state.selectedDate}" required class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Phân loại</label>
+                <select name="category" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm">
+                  <option>Học tập</option><option>Công việc</option><option>Cá nhân</option><option>Deadline</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Bắt đầu</label>
+                <input type="time" name="start" value="09:00" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Kết thúc</label>
+                <input type="time" name="end" value="10:00" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-muted mb-1">Địa điểm / Ghi chú</label>
+              <input name="location" placeholder="Ví dụ: Phòng B102 hoặc Online" class="w-full px-3.5 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" id="cancel-event-modal" class="px-4 py-2 rounded-xl border border-[#EFECE8] text-sm font-medium text-ink">Hủy</button>
+              <button type="submit" class="px-4 py-2 rounded-xl bg-[#0369A1] text-white text-sm font-medium hover:bg-[#075985]">Thêm</button>
+            </div>
+          </form>
+        `);
+        document.getElementById('cancel-event-modal').addEventListener('click', closeModal);
+        document.getElementById('form-event').addEventListener('submit', e => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const dateVal = fd.get('date');
+          state.events.push({
+            id: uid('e'),
+            title: fd.get('title').trim(),
+            date: dateVal,
+            start: fd.get('start'),
+            end: fd.get('end'),
+            category: fd.get('category'),
+            location: fd.get('location').trim()
+          });
+          state.selectedDate = dateVal;
+          state.calendarMonth = dateVal.slice(0, 7);
+          saveState();
+          closeModal();
+          showToast('Đã thêm sự kiện vào lịch', 'mint');
+          render();
+        });
+      }
+
+      // ================= GOALS & HABITS =================
+      function renderGoals(container) {
+        const dayNames = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+        container.innerHTML = `
+          <div class="space-y-6">
+            <!-- Habits Weekly Tracker -->
+            <div class="pastel-card rounded-2xl p-5">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                  <h3 class="font-bold text-ink text-base">Theo dõi thói quen tuần</h3>
+                  <p class="text-xs text-muted">Chạm vào từng ngày để đánh dấu hoàn thành</p>
+                </div>
+                <button type="button" id="btn-add-habit" class="self-start sm:self-auto px-3.5 py-2 rounded-xl bg-[#E3F6EC] text-[#15803D] text-xs font-semibold hover:bg-[#BBF7D0]">+ Thói quen</button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[520px]">
+                  <thead>
+                    <tr class="text-xs text-muted border-b border-[#EFECE8]">
+                      <th class="py-2 pr-4 font-semibold">Thói quen</th>
+                      ${dayNames.map(d => `<th class="py-2 text-center font-semibold w-10">${d}</th>`).join('')}
+                      <th class="py-2 text-right font-semibold pl-3">Tuần</th>
+                      <th class="py-2 w-8"></th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-[#F3EFEA]">
+                    ${state.habits.map(h => {
+                      const doneCount = h.days.filter(Boolean).length;
+                      const pct = Math.round((doneCount / 7) * 100);
+                      return `
+                        <tr>
+                          <td class="py-3 pr-4">
+                            <p class="text-sm font-medium text-ink">${escapeHtml(h.title)}</p>
+                            <p class="text-[11px] text-muted">${escapeHtml(h.category)}</p>
+                          </td>
+                          ${h.days.map((done, idx) => `
+                            <td class="py-3 text-center">
+                              <button type="button" data-habit-cell="${h.id}:${idx}" class="w-8 h-8 rounded-xl border text-xs font-bold transition ${done ? 'bg-[#E3F6EC] border-[#86EFAC] text-[#15803D]' : 'bg-cream border-[#EFECE8] text-muted hover:bg-sand'}">
+                                ${done ? '✓' : '·'}
+                              </button>
+                            </td>
+                          `).join('')}
+                          <td class="py-3 text-right pl-3 text-xs font-bold text-[#15803D] tabular-nums">${pct}%</td>
+                          <td class="py-3 text-right">
+                            <button type="button" data-del-habit="${h.id}" class="text-xs text-muted hover:text-[#BE123C] p-1">✕</button>
+                          </td>
+                        </tr>
+                      `;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Long-term Goals -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="font-bold text-ink text-base">Mục tiêu cá nhân</h3>
+                <button type="button" id="btn-add-goal" class="px-3.5 py-2 rounded-xl bg-[#EFE9FE] text-[#6D28D9] text-xs font-semibold hover:bg-[#DDD6FE]">+ Mục tiêu mới</button>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                ${state.goals.map(g => {
+                  const pct = g.target > 0 ? Math.min(100, Math.round((g.current / g.target) * 100)) : 0;
+                  const step = g.target >= 100000 ? 500000 : g.target >= 100 ? 10 : 1;
+                  return `
+                    <div class="pastel-card rounded-2xl p-5 flex flex-col justify-between gap-4">
+                      <div>
+                        <div class="flex items-start justify-between gap-2">
+                          <span class="px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-[#EFE9FE] text-[#6D28D9]">${escapeHtml(g.category)}</span>
+                          <button type="button" data-del-goal="${g.id}" class="text-xs text-muted hover:text-[#BE123C]">✕</button>
+                        </div>
+                        <h4 class="font-bold text-ink text-base mt-3">${escapeHtml(g.title)}</h4>
+                        <p class="text-xs text-muted mt-1">Hạn: ${formatDateVN(g.deadline)}</p>
+                      </div>
+                      <div>
+                        <div class="flex justify-between text-xs font-semibold mb-1.5 tabular-nums">
+                          <span class="text-ink">${g.unit === '₫' ? formatVND(g.current) : `${g.current} ${escapeHtml(g.unit)}`}</span>
+                          <span class="text-[#6D28D9]">${pct}%</span>
+                        </div>
+                        <div class="w-full h-2.5 rounded-full bg-cream overflow-hidden border border-[#EFECE8]">
+                          <div class="h-full rounded-full bg-gradient-to-r from-[#A855F7] via-[#EC4899] to-[#F59E0B] transition-all" style="width:${pct}%"></div>
+                        </div>
+                        <div class="flex items-center justify-between mt-3 text-xs text-muted">
+                          <span>Đích: ${g.unit === '₫' ? formatVND(g.target) : `${g.target} ${escapeHtml(g.unit)}`}</span>
+                          <div class="flex gap-1.5">
+                            <button type="button" data-step-goal="${g.id}:${-step}" class="px-2.5 py-1 rounded-lg bg-cream border border-[#EFECE8] hover:bg-sand font-bold text-ink">−</button>
+                            <button type="button" data-step-goal="${g.id}:${step}" class="px-2.5 py-1 rounded-lg bg-[#E3F6EC] text-[#15803D] font-bold hover:bg-[#BBF7D0]">+</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+
+        container.querySelectorAll('[data-habit-cell]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const [id, idx] = btn.dataset.habitCell.split(':');
+            const h = state.habits.find(x => x.id === id);
+            if (h) {
+              h.days[parseInt(idx, 10)] = !h.days[parseInt(idx, 10)];
+              saveState();
+              renderGoals(container);
+            }
+          });
+        });
+        container.querySelectorAll('[data-del-habit]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.habits = state.habits.filter(x => x.id !== btn.dataset.delHabit);
+            saveState();
+            renderGoals(container);
+          });
+        });
+        container.querySelectorAll('[data-step-goal]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const [id, delta] = btn.dataset.stepGoal.split(':');
+            const g = state.goals.find(x => x.id === id);
+            if (g) {
+              g.current = Math.max(0, Math.min(g.target, g.current + parseFloat(delta)));
+              saveState();
+              renderGoals(container);
+            }
+          });
+        });
+        container.querySelectorAll('[data-del-goal]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.goals = state.goals.filter(x => x.id !== btn.dataset.delGoal);
+            saveState();
+            renderGoals(container);
+          });
+        });
+        document.getElementById('btn-add-habit').addEventListener('click', openHabitModal);
+        document.getElementById('btn-add-goal').addEventListener('click', openGoalModal);
+      }
+
+      function openHabitModal() {
+        openModal('Thêm thói quen mới', `
+          <form id="form-habit" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold text-muted mb-1">Tên thói quen</label>
+              <input name="title" required placeholder="Ví dụ: Thiền 10 phút mỗi sáng" class="w-full px-3.5 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-muted mb-1">Nhóm</label>
+              <select name="category" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm">
+                <option>Sức khỏe</option><option>Học tập</option><option>Phát triển</option><option>Cá nhân</option>
+              </select>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" id="cancel-habit-modal" class="px-4 py-2 rounded-xl border border-[#EFECE8] text-sm font-medium">Hủy</button>
+              <button type="submit" class="px-4 py-2 rounded-xl bg-[#15803D] text-white text-sm font-medium">Thêm</button>
+            </div>
+          </form>
+        `);
+        document.getElementById('cancel-habit-modal').addEventListener('click', closeModal);
+        document.getElementById('form-habit').addEventListener('submit', e => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          state.habits.push({
+            id: uid('h'),
+            title: fd.get('title').trim(),
+            category: fd.get('category'),
+            days: [false, false, false, false, false, false, false]
+          });
+          saveState();
+          closeModal();
+          showToast('Đã thêm thói quen mới', 'mint');
+          render();
+        });
+      }
+
+      function openGoalModal() {
+        openModal('Thêm mục tiêu mới', `
+          <form id="form-goal" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold text-muted mb-1">Tên mục tiêu</label>
+              <input name="title" required placeholder="Ví dụ: Đọc 15 cuốn sách" class="w-full px-3.5 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Danh mục</label>
+                <select name="category" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm">
+                  <option>Học tập</option><option>Tài chính</option><option>Sức khỏe</option><option>Cá nhân</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Hạn hoàn thành</label>
+                <input type="date" name="deadline" value="2026-12-31" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2.5">
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Hiện tại</label>
+                <input type="number" name="current" value="0" min="0" required class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Mục tiêu</label>
+                <input type="number" name="target" value="100" min="1" required class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Đơn vị</label>
+                <input name="unit" value="%" required class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" id="cancel-goal-modal" class="px-4 py-2 rounded-xl border border-[#EFECE8] text-sm font-medium">Hủy</button>
+              <button type="submit" class="px-4 py-2 rounded-xl bg-[#6D28D9] text-white text-sm font-medium">Lưu</button>
+            </div>
+          </form>
+        `);
+        document.getElementById('cancel-goal-modal').addEventListener('click', closeModal);
+        document.getElementById('form-goal').addEventListener('submit', e => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          state.goals.push({
+            id: uid('g'),
+            title: fd.get('title').trim(),
+            category: fd.get('category'),
+            deadline: fd.get('deadline'),
+            current: parseFloat(fd.get('current')) || 0,
+            target: Math.max(1, parseFloat(fd.get('target')) || 1),
+            unit: fd.get('unit').trim() || '%'
+          });
+          saveState();
+          closeModal();
+          showToast('Đã tạo mục tiêu mới', 'lavender');
+          render();
+        });
+      }
+
+      // ================= FINANCE =================
+      function renderFinance(container) {
+        const totalIncome = state.transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+        const totalExpense = state.transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+        const balance = totalIncome - totalExpense;
+        const budgetPct = state.monthlyBudget > 0 ? Math.min(100, Math.round((totalExpense / state.monthlyBudget) * 100)) : 0;
+
+        const filteredTx = state.transactions
+          .filter(t => state.financeFilter === 'all' || t.type === state.financeFilter)
+          .sort((a, b) => b.date.localeCompare(a.date));
+
+        container.innerHTML = `
+          <div class="space-y-5">
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="rounded-2xl p-4 bg-gradient-to-br from-[#DCFCE7] to-[#CCFBF1] border border-[#A7F3D0] shadow-sm">
+                <p class="text-xs font-bold text-[#059669]">Tổng thu nhập</p>
+                <p class="text-xl sm:text-2xl font-bold text-[#064E3B] mt-2 tabular-nums">${formatVND(totalIncome)}</p>
+              </div>
+              <div class="rounded-2xl p-4 bg-gradient-to-br from-[#FFE4E6] to-[#FFEDD5] border border-[#FECDD3] shadow-sm">
+                <p class="text-xs font-bold text-[#E11D48]">Tổng chi tiêu</p>
+                <p class="text-xl sm:text-2xl font-bold text-[#881337] mt-2 tabular-nums">${formatVND(totalExpense)}</p>
+              </div>
+              <div class="rounded-2xl p-4 bg-gradient-to-br from-[#F3E8FF] to-[#E0F2FE] border border-[#DDD6FE] shadow-sm">
+                <p class="text-xs font-bold text-[#7E22CE]">Số dư hiện tại</p>
+                <p class="text-xl sm:text-2xl font-bold text-[#4C1D95] mt-2 tabular-nums">${formatVND(balance)}</p>
+              </div>
+            </div>
+
+            <!-- Budget & Chart -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <div class="pastel-card rounded-2xl p-5 flex flex-col justify-between gap-4">
+                <div>
+                  <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-ink text-base">Ngân sách chi tiêu tháng</h3>
+                    <button type="button" id="btn-edit-budget" class="text-xs font-medium text-[#6D28D9] hover:underline">Đổi hạn mức</button>
+                  </div>
+                  <p class="text-xs text-muted mt-1">Đã dùng ${formatVND(totalExpense)} / ${formatVND(state.monthlyBudget)}</p>
+                  <div class="w-full h-3 rounded-full bg-cream border border-[#EFECE8] overflow-hidden mt-3">
+                    <div class="h-full rounded-full transition-all ${budgetPct > 85 ? 'bg-[#FB7185]' : 'bg-[#6EE7B7]'}" style="width:${budgetPct}%"></div>
+                  </div>
+                  <p class="text-xs font-semibold mt-2 ${budgetPct > 85 ? 'text-[#BE123C]' : 'text-[#15803D]'}">${budgetPct}% ngân sách</p>
+                </div>
+                <button type="button" id="btn-add-tx" class="w-full py-2.5 rounded-xl bg-[#EFE9FE] text-[#6D28D9] font-semibold text-sm hover:bg-[#DDD6FE] transition">+ Ghi nhận thu / chi</button>
+              </div>
+
+              <div class="lg:col-span-2 pastel-card rounded-2xl p-5">
+                <h3 class="font-bold text-ink text-base mb-3">Cơ cấu chi tiêu theo danh mục</h3>
+                <div class="relative h-64">
+                  <canvas id="finance-chart"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Transactions List -->
+            <div class="pastel-card rounded-2xl p-5">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <h3 class="font-bold text-ink text-base">Lịch sử giao dịch</h3>
+                <div class="inline-flex rounded-xl bg-cream p-1 border border-[#EFECE8] self-start">
+                  <button type="button" data-fin-filter="all" class="px-3 py-1 rounded-lg text-xs font-medium ${state.financeFilter === 'all' ? 'bg-white shadow-xs text-ink' : 'text-muted'}">Tất cả</button>
+                  <button type="button" data-fin-filter="income" class="px-3 py-1 rounded-lg text-xs font-medium ${state.financeFilter === 'income' ? 'bg-white shadow-xs text-[#15803D]' : 'text-muted'}">Thu nhập</button>
+                  <button type="button" data-fin-filter="expense" class="px-3 py-1 rounded-lg text-xs font-medium ${state.financeFilter === 'expense' ? 'bg-white shadow-xs text-[#BE123C]' : 'text-muted'}">Chi tiêu</button>
+                </div>
+              </div>
+              <div class="space-y-2">
+                ${filteredTx.length ? filteredTx.map(t => `
+                  <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-cream border border-[#EFECE8]">
+                    <div class="flex items-center gap-3 min-w-0">
+                      <span class="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${t.type === 'income' ? 'bg-[#E3F6EC] text-[#15803D]' : 'bg-[#FFE8E6] text-[#BE123C]'}">${t.type === 'income' ? '+' : '−'}</span>
+                      <div class="min-w-0">
+                        <p class="text-sm font-semibold text-ink truncate">${escapeHtml(t.desc)}</p>
+                        <p class="text-xs text-muted">${escapeHtml(t.category)} • ${formatDateVN(t.date)}</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2.5 shrink-0">
+                      <span class="text-sm font-bold tabular-nums ${t.type === 'income' ? 'text-[#15803D]' : 'text-[#BE123C]'}">${t.type === 'income' ? '+' : '−'}${formatVND(t.amount)}</span>
+                      <button type="button" data-del-tx="${t.id}" class="text-xs text-muted hover:text-[#BE123C] p-1">✕</button>
+                    </div>
+                  </div>
+                `).join('') : '<p class="text-sm text-muted text-center py-6">Chưa có giao dịch nào.</p>'}
+              </div>
+            </div>
+          </div>
+        `;
+
+        const expByCat = {};
+        state.transactions.filter(t => t.type === 'expense').forEach(t => {
+          expByCat[t.category] = (expByCat[t.category] || 0) + t.amount;
+        });
+        const labels = Object.keys(expByCat);
+        const values = Object.values(expByCat);
+        const ctx = document.getElementById('finance-chart').getContext('2d');
+        financeChartInstance = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: labels.length ? labels : ['Chưa có chi tiêu'],
+            datasets: [{
+              data: values.length ? values : [1],
+              backgroundColor: ['#A78BFA', '#38BDF8', '#FB7185', '#FBBF24', '#34D399', '#F472B6'],
+              borderWidth: 2,
+              borderColor: '#FFFFFF'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '64%',
+            plugins: {
+              legend: { position: 'right', labels: { boxWidth: 12, font: { family: 'Inter', size: 12 } } }
+            }
+          }
+        });
+
+        container.querySelectorAll('[data-fin-filter]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.financeFilter = btn.dataset.finFilter;
+            saveState();
+            renderFinance(container);
+          });
+        });
+        container.querySelectorAll('[data-del-tx]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.transactions = state.transactions.filter(x => x.id !== btn.dataset.delTx);
+            saveState();
+            showToast('Đã xóa giao dịch', 'peach');
+            renderFinance(container);
+          });
+        });
+        document.getElementById('btn-add-tx').addEventListener('click', openTxModal);
+        document.getElementById('btn-edit-budget').addEventListener('click', openBudgetModal);
+      }
+
+      function openTxModal() {
+        openModal('Thêm giao dịch tài chính', `
+          <form id="form-tx" class="space-y-3.5">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Loại</label>
+                <select name="type" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm">
+                  <option value="expense">Chi tiêu</option>
+                  <option value="income">Thu nhập</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Số tiền (VNĐ)</label>
+                <input type="number" name="amount" min="1000" step="1000" required placeholder="150000" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Danh mục</label>
+                <select name="category" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm">
+                  <option>Ăn uống</option><option>Học tập</option><option>Di chuyển</option><option>Mua sắm</option><option>Giải trí</option><option>Thu nhập chính</option><option>Freelance</option><option>Khác</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Ngày</label>
+                <input type="date" name="date" value="${TODAY_STR}" required class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-muted mb-1">Mô tả</label>
+              <input name="desc" required placeholder="Ví dụ: Cà phê học bài..." class="w-full px-3.5 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" id="cancel-tx-modal" class="px-4 py-2 rounded-xl border border-[#EFECE8] text-sm font-medium">Hủy</button>
+              <button type="submit" class="px-4 py-2 rounded-xl bg-[#6D28D9] text-white text-sm font-medium">Lưu</button>
+            </div>
+          </form>
+        `);
+        document.getElementById('cancel-tx-modal').addEventListener('click', closeModal);
+        document.getElementById('form-tx').addEventListener('submit', e => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          state.transactions.unshift({
+            id: uid('f'),
+            type: fd.get('type'),
+            amount: parseFloat(fd.get('amount')) || 0,
+            category: fd.get('category'),
+            date: fd.get('date'),
+            desc: fd.get('desc').trim()
+          });
+          saveState();
+          closeModal();
+          showToast('Đã lưu giao dịch', 'mint');
+          render();
+        });
+      }
+
+      function openBudgetModal() {
+        openModal('Cập nhật hạn mức chi tiêu tháng', `
+          <form id="form-budget" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold text-muted mb-1">Hạn mức (VNĐ)</label>
+              <input type="number" name="budget" min="100000" step="100000" value="${state.monthlyBudget}" required class="w-full px-3.5 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" id="cancel-budget" class="px-4 py-2 rounded-xl border border-[#EFECE8] text-sm font-medium">Hủy</button>
+              <button type="submit" class="px-4 py-2 rounded-xl bg-[#6D28D9] text-white text-sm font-medium">Cập nhật</button>
+            </div>
+          </form>
+        `);
+        document.getElementById('cancel-budget').addEventListener('click', closeModal);
+        document.getElementById('form-budget').addEventListener('submit', e => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          state.monthlyBudget = Math.max(100000, parseFloat(fd.get('budget')) || 0);
+          saveState();
+          closeModal();
+          showToast('Đã cập nhật ngân sách', 'lavender');
+          render();
+        });
+      }
+
+      // ================= NOTES =================
+      function renderNotes(container) {
+        const nf = state.noteFilter;
+        const notes = state.notes
+          .filter(n => {
+            const matchSearch = !nf.search || n.title.toLowerCase().includes(nf.search.toLowerCase()) || n.content.toLowerCase().includes(nf.search.toLowerCase());
+            const matchColor = nf.color === 'all' || n.color === nf.color;
+            return matchSearch && matchColor;
+          })
+          .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+
+        container.innerHTML = `
+          <div class="space-y-5">
+            <div class="pastel-card rounded-2xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
+              <div class="flex flex-col sm:flex-row gap-2.5 flex-1">
+                <input id="note-search" type="text" value="${escapeHtml(nf.search)}" placeholder="Tìm trong ghi chú..." class="flex-1 px-3.5 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm focus:outline-none" />
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <button type="button" data-note-color="all" class="px-2.5 py-1.5 rounded-xl text-xs font-medium border ${nf.color === 'all' ? 'bg-ink text-white border-ink' : 'bg-cream border-[#EFECE8] text-muted'}">Tất cả</button>
+                  ${NOTE_COLORS.map(c => `
+                    <button type="button" data-note-color="${c.id}" title="${c.name}" class="w-7 h-7 rounded-xl border ${c.bg} ${nf.color === c.id ? 'ring-2 ring-ink' : c.border}"></button>
+                  `).join('')}
+                </div>
+              </div>
+              <button type="button" id="btn-add-note" class="px-3.5 py-2 rounded-xl bg-[#FEF3C7] text-[#B45309] text-xs font-semibold hover:bg-[#FDE68A]">+ Ghi chú mới</button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              ${notes.length ? notes.map(n => {
+                const c = NOTE_COLORS.find(x => x.id === n.color) || NOTE_COLORS[0];
+                return `
+                  <div class="rounded-2xl p-5 border ${c.bg} ${c.border} flex flex-col justify-between gap-4 shadow-xs">
+                    <div>
+                      <div class="flex items-start justify-between gap-2 mb-2">
+                        <span class="px-2 py-0.5 rounded-lg bg-white/70 text-[11px] font-semibold text-ink">${escapeHtml(n.tag || 'Ghi chú')}</span>
+                        <div class="flex items-center gap-1">
+                          <button type="button" data-pin-note="${n.id}" title="Ghim" class="p-1 rounded-lg text-xs ${n.pinned ? 'text-[#6D28D9] font-bold' : 'text-muted hover:text-ink'}">${n.pinned ? '📌' : '📍'}</button>
+                          <button type="button" data-edit-note="${n.id}" title="Sửa" class="p-1 rounded-lg text-xs text-muted hover:text-ink">✎</button>
+                          <button type="button" data-del-note="${n.id}" title="Xóa" class="p-1 rounded-lg text-xs text-muted hover:text-[#BE123C]">✕</button>
+                        </div>
+                      </div>
+                      <h4 class="font-bold text-ink text-base">${escapeHtml(n.title)}</h4>
+                      <p class="text-sm text-ink/80 mt-2 whitespace-pre-line leading-relaxed">${escapeHtml(n.content)}</p>
+                    </div>
+                    <p class="text-[11px] text-muted">Cập nhật: ${formatDateVN(n.updatedAt)}</p>
+                  </div>
+                `;
+              }).join('') : '<p class="text-sm text-muted col-span-full text-center py-8">Không có ghi chú nào.</p>'}
+            </div>
+          </div>
+        `;
+
+        document.getElementById('note-search').addEventListener('input', e => {
+          state.noteFilter.search = e.target.value;
+          renderNotes(container);
+          const inp = document.getElementById('note-search');
+          inp.focus();
+          inp.setSelectionRange(inp.value.length, inp.value.length);
+        });
+        container.querySelectorAll('[data-note-color]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.noteFilter.color = btn.dataset.noteColor;
+            renderNotes(container);
+          });
+        });
+        document.getElementById('btn-add-note').addEventListener('click', () => openNoteModal());
+        container.querySelectorAll('[data-pin-note]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const n = state.notes.find(x => x.id === btn.dataset.pinNote);
+            if (n) {
+              n.pinned = !n.pinned;
+              saveState();
+              renderNotes(container);
+            }
+          });
+        });
+        container.querySelectorAll('[data-edit-note]').forEach(btn => {
+          btn.addEventListener('click', () => openNoteModal(btn.dataset.editNote));
+        });
+        container.querySelectorAll('[data-del-note]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.notes = state.notes.filter(x => x.id !== btn.dataset.delNote);
+            saveState();
+            showToast('Đã xóa ghi chú', 'peach');
+            renderNotes(container);
+          });
+        });
+      }
+
+      function openNoteModal(editId = null) {
+        const existing = editId ? state.notes.find(x => x.id === editId) : null;
+        const selectedColor = existing?.color || 'lavender';
+        openModal(existing ? 'Chỉnh sửa ghi chú' : 'Thêm ghi chú mới', `
+          <form id="form-note" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold text-muted mb-1">Tiêu đề</label>
+              <input name="title" required value="${escapeHtml(existing?.title || '')}" placeholder="Nhập tiêu đề..." class="w-full px-3.5 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Thẻ (Tag)</label>
+                <input name="tag" value="${escapeHtml(existing?.tag || 'Cá nhân')}" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-muted mb-1">Màu pastel</label>
+                <select name="color" class="w-full px-3 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm">
+                  ${NOTE_COLORS.map(c => `<option value="${c.id}" ${selectedColor === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-muted mb-1">Nội dung</label>
+              <textarea name="content" rows="4" required placeholder="Viết ghi chú của bạn..." class="w-full px-3.5 py-2 rounded-xl bg-cream border border-[#EFECE8] text-sm">${escapeHtml(existing?.content || '')}</textarea>
+            </div>
+            <label class="flex items-center gap-2 text-xs font-medium text-ink cursor-pointer">
+              <input type="checkbox" name="pinned" ${existing?.pinned ? 'checked' : ''} class="rounded accent-[#6D28D9]" />
+              Ghim ghi chú lên đầu
+            </label>
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" id="cancel-note-modal" class="px-4 py-2 rounded-xl border border-[#EFECE8] text-sm font-medium">Hủy</button>
+              <button type="submit" class="px-4 py-2 rounded-xl bg-[#6D28D9] text-white text-sm font-medium">Lưu</button>
+            </div>
+          </form>
+        `);
+        document.getElementById('cancel-note-modal').addEventListener('click', closeModal);
+        document.getElementById('form-note').addEventListener('submit', e => {
+          e.preventDefault();
+          const fd = new FormData(e.target);
+          const payload = {
+            title: fd.get('title').trim(),
+            tag: fd.get('tag').trim() || 'Ghi chú',
+            color: fd.get('color'),
+            content: fd.get('content').trim(),
+            pinned: fd.get('pinned') === 'on',
+            updatedAt: TODAY_STR
+          };
+          if (existing) {
+            Object.assign(existing, payload);
+            showToast('Đã cập nhật ghi chú', 'lavender');
+          } else {
+            state.notes.unshift({ id: uid('n'), ...payload });
+            showToast('Đã thêm ghi chú mới', 'mint');
+          }
+          saveState();
+          closeModal();
+          render();
+        });
+      }
+
+      // ================= GLOBAL EVENTS =================
+      document.getElementById('sidebar-date').textContent = 'Chủ Nhật, 15/11/2026';
+      document.getElementById('modal-close').addEventListener('click', closeModal);
+      document.getElementById('modal-backdrop').addEventListener('click', e => {
+        if (e.target.id === 'modal-backdrop') closeModal();
+      });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeModal();
+      });
+
+      document.getElementById('btn-quick-add').addEventListener('click', () => {
+        if (state.activeTab === 'calendar') openEventModal();
+        else if (state.activeTab === 'goals') openGoalModal();
+        else if (state.activeTab === 'finance') openTxModal();
+        else if (state.activeTab === 'notes') openNoteModal();
+        else openTaskModal();
+      });
+
+      function handleReset() {
+        openConfirmModal('Khôi phục dữ liệu mẫu', 'Toàn bộ thay đổi hiện tại sẽ được đưa về dữ liệu mẫu ban đầu. Bạn có chắc muốn tiếp tục?', () => {
+          const currentTab = state.activeTab;
+          state = getDefaultData();
+          state.activeTab = currentTab;
+          saveState();
+          showToast('Đã khôi phục dữ liệu mẫu', 'lavender');
+          render();
+        });
+      }
+
+      document.getElementById('btn-reset-demo').addEventListener('click', handleReset);
+      document.getElementById('btn-mobile-reset').addEventListener('click', handleReset);
+
+      render();
+    })();
+  </script>
+</body>
+</html>
